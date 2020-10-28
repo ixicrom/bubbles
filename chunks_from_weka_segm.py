@@ -4,7 +4,7 @@ import numpy as np
 from bubble_tools import split_image
 
 test_file = '/Users/s1101153/OneDrive - University of Edinburgh/Files/bubbles/confocal_data/tunnels/Image73.lsm'
-seg_file = '/Users/s1101153/OneDrive - University of Edinburgh/Files/bubbles/confocal_data/tunnels/Classified_image73.tif'
+seg_file = '/Users/s1101153/OneDrive - University of Edinburgh/Files/bubbles/confocal_data/tunnels/model_73/Classified_image73.tif'
 
 im = io.imread(test_file)[0]
 pl.imshow(im)
