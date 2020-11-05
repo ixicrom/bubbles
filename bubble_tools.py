@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as pl
 import pandas as pd
 from scipy import fft
+from scipy import ndimage
 # from skimage import io
 
 # %% test variables
@@ -162,3 +163,25 @@ def acf_variables(acf_x, acf_y):
               'tp_y': tp_y,
               'tp_diff': tp_diff}
     return pd.Series(output)
+
+
+# %% sobel filter for looking at anisotropy
+def sobel(im):
+    x_kernel = np.array([[-1, 0, 1],
+                         [-2, 0, 2],
+                         [-1, 0, 1]])
+    y_kernel = np.array([[-1, -2, -1],
+                         [0, 0, 0],
+                         [1, 2, 2]])
+    kernel_45 = np.array([[-1, -1, 2],
+                          [-1, 2, -1],
+                          [2, -1, -1]])
+    kernel_neg45 = np.array([[2, -1, -1],
+                             [-1, 2, -1],
+                             [-1, -1, 2]])
+    sobel_x = ndimage.convolve(im, x_kernel)
+    sobel_y = ndimage.convolve(im, y_kernel)
+    sobel_45 = ndimage.convolve(im, kernel_45)
+    sobel_neg45 = ndimage.convolve(im, kernel_neg45)
+
+    return sobel_x, sobel_y, sobel_45, sobel_neg45
