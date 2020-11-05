@@ -13,8 +13,9 @@ im = io.imread(test_file)[0]
 
 seg_im = io.imread(seg_file, as_gray=True)[0]
 
-im_list, cent_list, d_list = split_image(im, seg_im, 128, 128, 64, plot_ims=False)
-
+dat = split_image(im, seg_im, 128, 128, 64, plot_ims=False)
+im_list = dat['chunk_im']
+d_list = dat['distance']
 
 io.imshow(im_list[0])
 pl.show()
@@ -123,21 +124,30 @@ for i in range(len(im_list)):
     vars = vars.append(dist)
     var_list.append(vars)
 
+    pl.subplot(3, 1, 1)
     pl.imshow(image)
     pl.title('Original image, distance = '+str(d_list[i]))
-    pl.colorbar()
-    pl.show()
+    # pl.colorbar()
 
+    pl.subplot(3, 1, 2)
+    pl.imshow(acf)
+    pl.title('ACF, distance = '+str(d_list[i]))
+    # pl.colorbar()
+
+    pl.subplot(3, 1, 3)
     pl.contour(acf)
+    pl.gca().set_aspect('equal', adjustable='box')
     pl.title('ACF contour, distance = '+str(d_list[i]))
-    pl.colorbar()
+    # pl.colorbar()
+    pl.tight_layout()
+    pl.savefig('test'+str(d_list[i])+'_2d.png')
     pl.show()
 
+    pl.subplot(1, 2, 1)
     pl.plot(acf_x[x_size//2+1:], label='x')
     pl.plot(acf_y[y_size//2+1:], label='y')
     pl.title('ACF mean, distance = '+str(d_list[i]))
     pl.legend()
-    pl.show()
 
     # pl.plot([*range(x_size//2+1)],
     #         acf_x[:x_size//2+1],
@@ -148,10 +158,17 @@ for i in range(len(im_list)):
     # pl.title(str(d_list[i]))
     # pl.legend()
     # pl.show()
-
+    pl.subplot(1, 2, 2)
     pl.plot(acf[x_size//2+1:, x_size//2+1], label='x')
     pl.plot(acf[y_size//2+1, y_size//2+1:], label='y')
     pl.title('ACF centre, distance = '+str(d_list[i]))
     pl.legend()
+    pl.tight_layout()
+    pl.savefig('test'+str(d_list[i])+'_1d.png')
     pl.show()
 pd.concat(var_list, axis=1)
+
+dat[['chunk_loc', 'distance']]
+pl.imshow(dat['chunk_im'][10])
+pl.savefig('test_topright.png')
+pl.show()
