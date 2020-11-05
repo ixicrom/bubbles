@@ -10,6 +10,8 @@ from scipy import stats
 from sklearn.model_selection import KFold
 from sklearn.model_selection import cross_val_score, cross_validate
 from sklearn.tree import DecisionTreeRegressor, plot_tree
+from sklearn.neighbors import KNeighborsClassifier
+
 
 dat_file = '/Users/s1101153/OneDrive - University of Edinburgh/Files/bubbles/confocal_data/tunnels/dat_list_73.csv'
 im_folder = '/Users/s1101153/OneDrive - University of Edinburgh/Files/bubbles/confocal_data/tunnels/'
@@ -156,3 +158,69 @@ print(np.mean(tree_scores_over['test_score']))
 for tr in tree_scores_over['estimator']:
     plot_tree(tr)
     pl.show()
+
+# %% try some classification. First I need to define the classes
+
+dat_separate_all['distance'].hist()
+dat_separate_all['distance'].describe()
+dat_overlap_all['distance'].describe()
+
+quant75 = min(dat_separate_all['distance'].quantile(0.75),
+              dat_overlap_all['distance'].quantile(0.75))
+
+quant25 = max(dat_separate_all['distance'].quantile(0.25),
+              dat_overlap_all['distance'].quantile(0.25))
+
+d_separate = dat_separate_all['distance']
+d_overlap = dat_overlap_all['distance']
+
+far_separate = d_separate>quant75
+near_separate = d_separate<quant25
+
+far_overlap = d_overlap>quant75
+near_overlap = d_overlap<quant25
+
+dat_separate_all['count'] = None
+dat_separate_all['count'][far_separate] = 'far'
+dat_separate_all['count'][near_separate] = 'near'
+dat_separate_all['count']
+
+dat_overlap_all['class'] = None
+dat_overlap_all['class'][far_overlap] = 'far'
+dat_overlap_all['class'][near_overlap] = 'near'
+dat_overlap_all['class']
+
+
+train_test_overlap = dat_overlap_all.dropna()
+train_test_separate = dat_separate_all.dropna()
+train_test_separate
+
+# %% now try some classification
+X = train_test_overlap.iloc[:, 4:9]
+y = train_test_overlap['class']
+
+from sklearn.model_selection import train_test_split
+#split dataset into train and test data
+X_train, X_test, y_train, y_test = train_test_split(X,
+                                                    y,
+                                                    test_size=0.2,
+                                                    random_state=1,
+                                                    stratify=y)
+
+knn = KNeighborsClassifier(n_neighbors=3)
+knn.fit(X_train, y_train)
+
+knn.predict(X_test)
+knn.score(X_test, y_test)
+
+# %% try with cross-validation to choose k
+from sklearn.model_selection import GridSearchCV
+
+knn_cv = KNeighborsClassifier()
+
+k_grid = {'n_neighbors': np.arange(1, 25)}
+knn_gscv = GridSearchCV(knn_cv, k_grid, cv=5)
+
+knn_gscv.fit(X, y)
+print(knn_gscv.best_params_)
+print(knn_gscv.best_score_)
