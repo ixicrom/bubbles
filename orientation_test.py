@@ -7,7 +7,9 @@ import numpy as np
 import seaborn as sb
 import math
 from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
+from matplotlib import cm, style
+style.core.reload_library()
+pl.style.use('thesis')
 # import imageio
 # from sklearn.preprocessing import MinMaxScaler
 
@@ -172,13 +174,11 @@ dat_plot['angle_deg'] = (dat_plot['av_or']-dat_plot['seg_angle'])*180/math.pi
 pl.scatter(dat_plot['distance'],
            dat_plot['angle_deg'],
            c=dat_plot['e_ratio'])
-pl.xlabel('distance')
-pl.ylabel('angle (degrees)')
+pl.xlabel('Distance from bubble trace')
+pl.ylabel('Angle (degrees)')
 pl.colorbar()
 pl.show()
 
-sb.scatterplot(data=dat_plot, x='distance', y='angle_deg',
-               hue='e_ratio', alpha=0.7)
 
 
 # %% try a 3D bar plot
@@ -282,4 +282,30 @@ ang_300px_abs.hist()
 pl.xlabel('Magnitude of angle (deg)')
 pl.ylabel('Frequency')
 pl.title('Distance = 300 pixels (+/- 25px)')
+pl.show()
+
+
+# %% try plotting average angle as function of distance
+
+xedges
+angle_bin_means = []
+for i in range(len(xedges)):
+    if i!=0:
+        xmin = xedges[i-1]
+        xmax = xedges[i]
+        # print(str(xmin)+', '+str(xmax))
+        # print(xmax-xmin)
+        dat_bins = dat_plot[(dat_plot['distance'] > xmin) & (dat_plot['distance'] < xmax)]
+        angle_bins = dat_bins['angle_deg']
+        angle_bin_means.append(angle_bins.mean())
+
+
+
+dat_bins
+angle_bins
+
+angle_bin_means
+pl.scatter(xedges[:-1], angle_bin_means)
+pl.xlabel('Distance from bubble trace (lower limit of bin)')
+pl.ylabel('Average orientation of autocorrelation function')
 pl.show()
