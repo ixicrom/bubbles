@@ -3,13 +3,13 @@ import matplotlib.pyplot as pl
 import pandas as pd
 from scipy import fft
 from scipy import ndimage
-# from skimage import io
+from skimage import io
 
 # %% test variables
 # test_file = '/Users/s1101153/OneDrive - University of Edinburgh/Files/bubbles/confocal_data/tunnels/Image73.lsm'
-# seg_file = '/Users/s1101153/OneDrive - University of Edinburgh/Files/bubbles/confocal_data/tunnels/Classified_image73.tif'
+# seg_file = '/Users/s1101153/OneDrive - University of Edinburgh/Files/bubbles/confocal_data/tunnels/model_73/Classified_image73.tif'
 # im = io.imread(test_file)[0]
-# seg_im = io.imread(seg_file, as_gray=True)[0]
+# seg_im = io.imread(seg_file)[0]
 # plot_ims = False
 # chunk_x = 128
 # chunk_y = 128
@@ -27,12 +27,15 @@ def find_closest(im_centre, hole_locs):
     return min(dists)
 
 
-def split_image(im, seg_im, chunk_x, chunk_y, shift, plot_ims=False):
+def split_image(im, seg_im, bijel_val, chunk_x, chunk_y, shift, plot_ims=False):
     im_list = []
     centre_list = []
     dist_list = []
-    new_im = np.where(seg_im < 0.5, -100, im)
 
+    # set real image to -100 where the segmented image is not a bijel
+    new_im = np.where(seg_im != bijel_val, -100, im)
+
+    # get locations of holes
     holes = np.where(new_im == -100)
     hole_locs = list(zip(holes[0], holes[1]))
 
@@ -185,3 +188,79 @@ def sobel(im):
     sobel_neg45 = ndimage.convolve(im, kernel_neg45)
 
     return sobel_x, sobel_y, sobel_45, sobel_neg45
+
+
+# %% functions for calculating orientation of chunks and segmented images
+def seg_orientation(seg_im_array):
+    # pl.imshow(seg_im_array)
+    # pl.colorbar()
+    # pl.show()
+    im_x, im_y = np.meshgrid(np.arange(seg_im_array.shape[1]),
+                             np.arange(seg_im_array.shape[0]))
+    im_table = np.vstack((im_x.ravel(), im_y.ravel(), seg_im_array.ravel())).T
+    im_table
+    im_df = pd.DataFrame(im_table, columns=['x', 'y', 'val'])
+    im_df['val'].unique()
+
+    pixels = im_df[im_df['val'] == 0][['x', 'y']].values.T
+
+    if pixels.shape[1] > 1:
+        cov_matrix = np.cov(pixels)
+        eigen = np.linalg.eig(cov_matrix)
+        e_vals = eigen[0]
+        e_vecs = eigen[1]
+        e_vec = e_vecs[np.argmax(e_vals)]
+        angle = np.arctan(e_vec[0]/e_vec[1])
+    angle
+    return angle
+
+
+def orientation(im_array, n_bins=10, plot=False):
+    im_max = np.max(im_array)
+    im_min = np.min(im_array)
+    bins = np.linspace(im_min, im_max, n_bins)
+    im_bins = np.digitize(im_array, bins)
+    if plot:
+        pl.contour(im_array)
+        pl.show()
+        pl.imshow(im_bins)
+        pl.show()
+    im_x, im_y = np.meshgrid(np.arange(im_bins.shape[1]),
+                             np.arange(im_bins.shape[0]))
+    im_table = np.vstack((im_x.ravel(), im_y.ravel(), im_bins.ravel())).T
+    im_table
+    im_df = pd.DataFrame(im_table, columns=['x', 'y', 'val'])
+    val_list = []
+    e_val_list = []
+    e_vec_list = []
+    angle_list = []
+    e_ratio_list = []
+    for val in im_df['val'].unique():
+        pixels = im_df[im_df['val'] == val][['x', 'y']].values.T
+
+        if pixels.shape[1] > 1:
+            cov_matrix = np.cov(pixels)
+            eigen = np.linalg.eig(cov_matrix)
+            e_vals = eigen[0]
+            e_vecs = eigen[1]
+            # print('max')
+            # print(np.argmax(e_vals))
+            e_val = np.max(e_vals)
+            # print(e_val)
+            e_vec = e_vecs[np.argmax(e_vals)]
+            e_val_2 = e_vals[np.argsort(e_vals)[0]]
+            # print(e_val_2)
+            # print('second')
+            # print(np.argsort(e_vals)[0])
+            angle = np.arctan(e_vec[0]/e_vec[1])
+            val_list.append(val)
+            e_vec_list.append(e_vec)
+            e_val_list.append(e_val)
+            e_ratio_list.append(e_val/e_val_2)
+            angle_list.append(angle)
+
+    out = pd.DataFrame([val_list,
+                        e_vec_list, e_val_list,
+                        e_ratio_list, angle_list]).T
+    out.columns = ['val', 'e_vec', 'e_val', 'e_ratio', 'angle']
+    return out
