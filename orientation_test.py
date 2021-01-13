@@ -17,9 +17,9 @@ dat_file = '/Users/s1101153/OneDrive - University of Edinburgh/Files/bubbles/con
 im_folder = '/Users/s1101153/OneDrive - University of Edinburgh/Files/bubbles/confocal_data/tunnels/'
 seg_folder = '/Users/s1101153/OneDrive - University of Edinburgh/Files/bubbles/confocal_data/tunnels/model_73'
 
-# %% functions to calculate orientation
 
-def seg_orientation(seg_im_array):
+# %% functions to calculate orientation
+def seg_orientation(seg_im_array, hole_pixel_bool):
     # pl.imshow(seg_im_array)
     # pl.colorbar()
     # pl.show()
@@ -30,7 +30,7 @@ def seg_orientation(seg_im_array):
     im_df = pd.DataFrame(im_table, columns=['x', 'y', 'val'])
     im_df['val'].unique()
 
-    pixels = im_df[im_df['val'] == 0][['x', 'y']].values.T
+    pixels = im_df[hole_pixel_bool][['x', 'y']].values.T
 
     if pixels.shape[1] > 1:
         cov_matrix = np.cov(pixels)
@@ -41,6 +41,7 @@ def seg_orientation(seg_im_array):
         angle = np.arctan(e_vec[0]/e_vec[1])
     angle
     return angle
+
 
 def orientation(im_array, n_bins=10, plot=False):
     im_max = np.max(im_array)
@@ -93,9 +94,6 @@ def orientation(im_array, n_bins=10, plot=False):
     return out
 
 
-# %% reading files and opening images
-
-
 dat_liquid = pd.DataFrame({'chunk_im': [],
                            'chunk_loc': [],
                            'distance': []})
@@ -105,7 +103,7 @@ dat_particle = pd.DataFrame({'chunk_im': [],
 dat_seg = []
 f = open(dat_file, 'r')
 for line in f.readlines():
-    if not line.endswith('x') and line.startswith('Image'):
+    if not line.endswith('x\n') and line.startswith('Image'):
         vals = line.split(',')
 
         im_file = os.path.join(im_folder, vals[0])
@@ -114,10 +112,10 @@ for line in f.readlines():
         seg_file = os.path.join(seg_folder, vals[1])
         seg_im = io.imread(seg_file)[0]
 
-
-        liquid = split_image(liquid_im, seg_im, 64, 64, 32)
+        liquid = split_image(liquid_im, seg_im, 1, 64, 64, 32)
         dat_liquid = dat_liquid.append(liquid)
-        seg_angle = seg_orientation(seg_im)
+        hole_bool = (seg_im == 0).ravel()
+        seg_angle = seg_orientation(seg_im, hole_bool)
         for i in range(liquid.shape[0]):
             dat_seg.append(seg_angle)
 
@@ -178,7 +176,6 @@ pl.xlabel('Distance from bubble trace')
 pl.ylabel('Angle (degrees)')
 pl.colorbar()
 pl.show()
-
 
 
 # %% try a 3D bar plot
@@ -270,14 +267,14 @@ pl.ylabel('Frequency')
 pl.title('Distance = 100 pixels (+/- 25px)')
 pl.show()
 
-ang_200px_abs = np.abs(dat_plot[(dat_plot['distance']>175) & (dat_plot['distance']<225)]['angle_deg'])
+ang_200px_abs = np.abs(dat_plot[(dat_plot['distance'] > 175) & (dat_plot['distance'] < 225)]['angle_deg'])
 ang_200px_abs.hist()
 pl.xlabel('Magnitude of angle (deg)')
 pl.ylabel('Frequency')
 pl.title('Distance = 200 pixels (+/- 25px)')
 pl.show()
 
-ang_300px_abs = np.abs(dat_plot[(dat_plot['distance']>275) & (dat_plot['distance']<325)]['angle_deg'])
+ang_300px_abs = np.abs(dat_plot[(dat_plot['distance'] > 275) & (dat_plot['distance'] < 325)]['angle_deg'])
 ang_300px_abs.hist()
 pl.xlabel('Magnitude of angle (deg)')
 pl.ylabel('Frequency')
@@ -290,7 +287,7 @@ pl.show()
 xedges
 angle_bin_means = []
 for i in range(len(xedges)):
-    if i!=0:
+    if i != 0:
         xmin = xedges[i-1]
         xmax = xedges[i]
         # print(str(xmin)+', '+str(xmax))
@@ -298,8 +295,6 @@ for i in range(len(xedges)):
         dat_bins = dat_plot[(dat_plot['distance'] > xmin) & (dat_plot['distance'] < xmax)]
         angle_bins = dat_bins['angle_deg']
         angle_bin_means.append(angle_bins.mean())
-
-
 
 dat_bins
 angle_bins

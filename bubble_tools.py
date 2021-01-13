@@ -71,6 +71,7 @@ def split_image(im, seg_im, bijel_val, chunk_x, chunk_y, shift, plot_ims=False):
         dat = pd.DataFrame([im_list, centre_list, dist_list])
         dat = dat.transpose()
         dat.columns = ['chunk_im', 'chunk_loc', 'distance']
+    print(dat.shape)
     return dat
 
 
@@ -191,7 +192,7 @@ def sobel(im):
 
 
 # %% functions for calculating orientation of chunks and segmented images
-def seg_orientation(seg_im_array):
+def seg_orientation(seg_im_array, hole_pixel_bool):
     # pl.imshow(seg_im_array)
     # pl.colorbar()
     # pl.show()
@@ -202,7 +203,7 @@ def seg_orientation(seg_im_array):
     im_df = pd.DataFrame(im_table, columns=['x', 'y', 'val'])
     im_df['val'].unique()
 
-    pixels = im_df[im_df['val'] == 0][['x', 'y']].values.T
+    pixels = im_df[hole_pixel_bool][['x', 'y']].values.T
 
     if pixels.shape[1] > 1:
         cov_matrix = np.cov(pixels)
