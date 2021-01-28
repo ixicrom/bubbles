@@ -17,10 +17,11 @@ while True:
         break
     else:
         print('Invalid selection, try again')
+
 im_folder = '/Users/s1101153/OneDrive - University of Edinburgh/Files/bubbles/confocal_data/tunnels/'
 dat_file = '/Users/s1101153/OneDrive - University of Edinburgh/Files/bubbles/confocal_data/tunnels/dat_list.csv'
 
-boundary_thickness = 150
+boundary_thickness = float(input('Input the distance of the bubbles effect: '))
 
 f = open(dat_file, 'r')
 for line in f.readlines():

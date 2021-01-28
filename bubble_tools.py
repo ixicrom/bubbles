@@ -4,6 +4,7 @@ import pandas as pd
 from scipy import fft
 from scipy import ndimage
 from skimage import io
+import math
 
 # %% test variables
 # test_file = '/Users/s1101153/OneDrive - University of Edinburgh/Files/bubbles/confocal_data/tunnels/Image73.lsm'
@@ -212,7 +213,7 @@ def seg_orientation(seg_im_array, hole_pixel_bool):
         e_vecs = eigen[1]
         e_vec = e_vecs[np.argmax(e_vals)]
         angle = np.arctan(e_vec[0]/e_vec[1])
-    angle
+    # angle
     return angle
 
 
@@ -253,7 +254,11 @@ def orientation(im_array, n_bins=10, plot=False):
             # print(e_val_2)
             # print('second')
             # print(np.argsort(e_vals)[0])
-            angle = np.arctan(e_vec[0]/e_vec[1])
+            if e_vec[1] != 0:
+                angle = np.arctan(e_vec[0]/e_vec[1])
+            else:
+                angle = math.pi/2
+                # angle = np.arctan(e_vec[0]/e_vec[1])
             val_list.append(val)
             e_vec_list.append(e_vec)
             e_val_list.append(e_val)
