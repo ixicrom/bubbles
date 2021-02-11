@@ -17,7 +17,7 @@ import seaborn as sb
 from sklearn.preprocessing import StandardScaler
 
 im_folder = '/Users/s1101153/Dropbox/Emily+Paul meetings/Bubble Data'
-dat_file = '/Users/s1101153/OneDrive - University of Edinburgh/Files/bubbles/plots/choose_parameters/data_rg_32.pkl'
+dat_file = '/Users/s1101153/OneDrive - University of Edinburgh/Files/bubbles/plots/rg_tuning/best_dat.pkl'
 chunk_size = 32
 chunk_y = chunk_size*4
 chunk_x = chunk_size*4
@@ -84,7 +84,7 @@ for im in dat['chunk_im']:
     vars.append(acf_variables(acf_x, acf_y))
 vars = pd.concat(vars, axis=1).transpose()
 dat = pd.concat([dat, vars], axis=1)
-
+dat = dat.replace([np.inf, -np.inf], np.nan).dropna()
 
 # define which of the original images are near and which are unknown
 dat_near = dat[dat['distance'] <= chunk_size]
@@ -103,7 +103,7 @@ dat_ml = pd.concat([dat_near, dat_far])
 dat_ml.describe()
 dat_ml
 dat_ml['label']
-for col in dat_ml.columns[5:14]:
+for col in dat_ml.columns[6:16]:
     sb.boxplot(data=dat_ml,
                x='label',
                y=col)
@@ -113,13 +113,14 @@ for col in dat_ml.columns[5:14]:
     pl.ylabel(col)
     pl.show()
 
-variables = ['distance', 'angle_deg']
+# select variables and rescale data
+variables = ['abs_angle', 'grad_diff']
 X = dat_ml.dropna().loc[:, variables]
 scaler = StandardScaler().fit(X)
 Xs = scaler.transform(X)
 y = dat_ml.dropna()['label']
 y.describe()
-print(19/36)
+print(25/50)
 
 # try KNN
 knn_cv = KNeighborsClassifier()
@@ -143,12 +144,11 @@ unknown_results = dat_unknown.dropna()
 unknown_results.shape
 unknown_results['label'] = unknown_preds
 
-dat_unknown['label'] = unknown_results['label']
+dat_unknown['label_knn'] = unknown_results['label']
 
-sb.swarmplot(data=dat_unknown,
-             x='label',
-             y='distance',
-             size=10)
+sb.violinplot(data=dat_unknown,
+              x='label_knn',
+              y='distance')
 pl.title('KNN')
 pl.show()
 
@@ -168,12 +168,13 @@ print(X.columns.values)
 print(lr_fit.coef_)
 print(lr.score(Xs, y))
 
-lr_fit.predict(for_pred)
+lr_preds = lr_fit.predict(for_pred)
+dat_unknown['label_logreg'] = lr_preds
 
 prob = lr_fit.predict_proba(for_pred)
 lr_fit.classes_
 
-prob_df = pd.DataFrame(prob, index = for_pred_df.index, columns = ['prob_f', 'prob_n'])
+prob_df = pd.DataFrame(prob, index=for_pred_df.index, columns=['prob_f', 'prob_n'])
 prob_df
 
 prob_df['distance']=dat.loc[prob_df.index,'distance']
@@ -187,6 +188,20 @@ pl.ylabel('prob of being affected by bubble')
 pl.show()
 
 pl.scatter(prob_df['abs_angle'], prob_df['prob_n'])
-pl.xlabel('absolute angle from bubble trace')
+pl.xlabel('angle from bubble trace')
 pl.ylabel('prob of being affected by bubble')
 pl.show()
+
+sb.violinplot(data=dat_unknown,
+             x='label_logreg',
+             y='distance')
+pl.title('Logistic regression')
+pl.show()
+
+sb.violinplot(data=dat_unknown, y='distance')
+pl.title('All data')
+pl.show()
+
+dat_test = dat_ml.copy().dropna()
+dat_test.loc[dat_test['label'] == 'n', 'label'] = 1
+dat_test.loc[dat_test['label'] == 'f', 'label'] = 0

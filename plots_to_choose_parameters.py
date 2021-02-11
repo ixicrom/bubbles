@@ -79,13 +79,13 @@ for line in f.readlines():
         # split the image into chunks using info from the segmented image
         # uses shift = chunk size so no overlap
         chunks = split_image(im=im, seg_im=seg_im, bijel_val=b_val,
-                             chunk_x=64, chunk_y=64,
-                             shift=32)
+                             chunk_x=chunk_size, chunk_y=chunk_size,
+                             shift=chunk_size)
         dat = dat.append(chunks)
 
         # calulate the orientation of the segmented image and store
         seg_angle = seg_orientation(seg_im, hole_bool)
-        sample_id = vals[2]
+        sample_id = vals[3]
         for i in range(chunks.shape[0]):
             seg_angles.append(seg_angle)
             sample_ids.append(sample_id)
@@ -98,7 +98,6 @@ for line in f.readlines():
             im_save = vals[0] + file_suffix + '.png'
             pl.savefig(os.path.join(save_folder, im_save))
             pl.show()
-
 f.close()
 
 # neaten up dataframe
@@ -122,6 +121,12 @@ dat.head()
 
 # calculate the angle relevant to the hole orientation and turn to degrees
 dat['angle_deg'] = (dat['av_or']-dat['seg_angle'])*180/math.pi
+dat['abs_angle'] = np.abs(dat['angle_deg'])
+
+# save the dataframe as a pickle for other scripts to use
+pic_name = 'data' + file_suffix + '.pkl'
+dat.to_pickle(os.path.join(save_folder, pic_name))
+
 
 # make 3D histogram
 fig = pl.figure()
@@ -173,6 +178,7 @@ pl.show()
 # try plot average angle as function of distance
 # uses xedges as calculated for the 3D histogram
 angle_bin_means = []
+abs_angle_bin_means = []
 for i in range(len(xedges)):
     if i != 0:
         xmin = xedges[i-1]
@@ -181,7 +187,9 @@ for i in range(len(xedges)):
         # print(xmax-xmin)
         dat_bins = dat[(dat['distance'] > xmin) & (dat['distance'] < xmax)]
         angle_bins = dat_bins['angle_deg']
+        abs_angle_bins = dat_bins['abs_angle']
         angle_bin_means.append(angle_bins.mean())
+        abs_angle_bin_means.append(abs_angle_bins.mean())
 
 dat_bins
 angle_bins
@@ -191,5 +199,12 @@ pl.scatter(xedges[:-1], angle_bin_means)
 pl.xlabel('Distance from bubble trace (lower limit of bin)')
 pl.ylabel('Average orientation of autocorrelation function')
 file_ang_dist = 'ang-dist' + file_suffix + '.png'
+pl.savefig(os.path.join(save_folder, file_ang_dist))
+pl.show()
+
+pl.scatter(xedges[:-1], abs_angle_bin_means)
+pl.xlabel('Distance from bubble trace (lower limit of bin)')
+pl.ylabel('Average absolute orientation of autocorrelation function')
+file_ang_dist = 'abs-ang-dist' + file_suffix + '.png'
 pl.savefig(os.path.join(save_folder, file_ang_dist))
 pl.show()
