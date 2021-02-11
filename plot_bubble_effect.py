@@ -4,6 +4,10 @@ import matplotlib.pyplot as pl
 import numpy as np
 from bubble_tools import find_closest
 import cv2
+import matplotlib
+matplotlib.style.core.reload_library()
+pl.style.use('thesis')
+
 
 while True:
     seg_type = input('Which segmentation data? 0=weka, 1=region_growing: ')
@@ -64,5 +68,7 @@ for line in f.readlines():
         seg_im.shape
         pl.imshow(im, cmap='gray')
         pl.imshow(boundary_area, alpha=0.5, vmin=0, vmax=2)
+        pl.savefig(vals[0].rstrip('.lsm')+'_'+str(boundary_thickness)+'px_effect.png')
         pl.show()
 f.close()
+vals[0].rstrip('.lsm')
