@@ -43,8 +43,8 @@ def split_image(im, seg_im, bijel_val, chunk_x, chunk_y, shift, plot_ims=False):
     size_x = new_im.shape[1]
     size_y = new_im.shape[0]
 
-    n_y_shift = (size_y-chunk_y)//shift
-    n_x_shift = (size_x-chunk_x)//shift
+    n_y_shift = (size_y-chunk_y)//shift+1
+    n_x_shift = (size_x-chunk_x)//shift+1
 
     x_min = 0
     x_max = chunk_x
@@ -262,7 +262,10 @@ def orientation(im_array, n_bins=10, plot=False):
             val_list.append(val)
             e_vec_list.append(e_vec)
             e_val_list.append(e_val)
-            e_ratio_list.append(e_val/e_val_2)
+            if e_val_2 == 0:
+                e_ratio_list.append(np.inf)
+            else:
+                e_ratio_list.append(e_val/e_val_2)
             angle_list.append(angle)
 
     out = pd.DataFrame([val_list,
@@ -270,3 +273,9 @@ def orientation(im_array, n_bins=10, plot=False):
                         e_ratio_list, angle_list]).T
     out.columns = ['val', 'e_vec', 'e_val', 'e_ratio', 'angle']
     return out
+
+
+def get_angle(orient_df):
+    angle = np.average(orient_df['angle'][1:-1])#,
+                       #weights=orient_df['e_ratio'][1:-1])
+    return angle
